@@ -1,0 +1,52 @@
+import cv2
+import mediapipe as mp
+import math
+import time
+import numpy as np
+
+    ############################################ object create and setups ######################################################
+handobj=mp.solutions.hands
+hand=handobj.Hands(False,1,0.5,0.5)
+draw=mp.solutions.drawing_utils
+cap=cv2.VideoCapture(0)
+
+    ############################################ frame reading and detecting the hand ######################################################
+
+while True:
+    success,frame=cap.read()
+    framergb=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+    output=hand.process(framergb)
+    #print(output.multi_hand_landmarks)
+    
+    ############################################ detecting the hand gesture and doing accordingly ######################################################
+    
+    if output.multi_hand_landmarks:
+        for loc in output.multi_hand_landmarks:
+            l4,l8=[],[]
+            for index,landmrk in enumerate(loc.landmark):
+                h,w,c=frame.shape
+                x,y=int((landmrk.x*w)),int((landmrk.y*h))
+                #print(index,int(x),int(y))
+                drawbrd=draw.draw_landmarks(frame,loc,handobj.HAND_CONNECTIONS)
+                if index==0:
+                    cv2.circle(frame,(x,y),15,(0,255,255),cv2.FILLED)
+                if index==4:
+                    l4.append(x)
+                    l4.append(y)
+                    #print(l4[0],l4[1])
+                if index==8:
+                    l8.append(x)
+                    l8.append(y)
+                    #print(l8[0],l8[1])
+                if  l4 and l8:
+                    dx=abs(l8[0]-l4[0])
+                    dy=abs(l8[1]-l4[1])
+                    print(dx,dy)
+                    if dx>10 and dy>10:
+                        frame=cv2.resize(frame,(dx*2,dy*2))
+                        
+    ############################################ showing the result frame and quiting the process if said ######################################################
+
+    cv2.imshow('hand',frame)
+    if cv2.waitKey(1)==ord('q'):
+        break
